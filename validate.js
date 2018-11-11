@@ -27,7 +27,7 @@
       , validator;
 
     if (results.some(function(r) { return v.isPromise(r.error); })) {
-      throw new Error("Use validate.async if you want support for promises");
+      throw new Error(v._("Use validate.async if you want support for promises"));
     }
     return validate.processValidationResults(results, options);
   };
@@ -105,7 +105,7 @@
           validator = v.validators[validatorName];
 
           if (!validator) {
-            error = v.format("Unknown validator %{name}", {name: validatorName});
+            error = v.format(v._("Unknown validator %{name}"), {name: validatorName});
             throw new Error(error);
           }
 
@@ -151,7 +151,7 @@
       if (typeof v.formatters[format] === 'function') {
         errors = v.formatters[format](errors);
       } else {
-        throw new Error(v.format("Unknown format %{format}", options));
+        throw new Error(v.format(v._("Unknown format %{format}"), options));
       }
 
       return v.isEmpty(errors) ? undefined : errors;
@@ -760,6 +760,11 @@
         console.error("[validate.js] " + msg);
       }
     }
+  },
+  _: function(phrase){
+    return !v.isEmpty(validate.Language)
+     ? validate.Language[phrase]
+     : phrase;
   });
 
   validate.validators = {
@@ -767,7 +772,7 @@
     presence: function(value, options) {
       options = v.extend({}, this.options, options);
       if (options.allowEmpty !== false ? !v.isDefined(value) : v.isEmpty(value)) {
-        return options.message || this.message || "can't be blank";
+        return options.message || this.message || v._("can't be blank"));
       }
     },
     length: function(value, options, attribute) {
@@ -788,28 +793,28 @@
       value = tokenizer(value);
       var length = value.length;
       if(!v.isNumber(length)) {
-        return options.message || this.notValid || "has an incorrect length";
+        return options.message || this.notValid || v._("has an incorrect length");
       }
 
       // Is checks
       if (v.isNumber(is) && length !== is) {
         err = options.wrongLength ||
           this.wrongLength ||
-          "is the wrong length (should be %{count} characters)";
+          v._("is the wrong length (should be %{count} characters)");
         errors.push(v.format(err, {count: is}));
       }
 
       if (v.isNumber(minimum) && length < minimum) {
         err = options.tooShort ||
           this.tooShort ||
-          "is too short (minimum is %{count} characters)";
+          v._("is too short (minimum is %{count} characters)");
         errors.push(v.format(err, {count: minimum}));
       }
 
       if (v.isNumber(maximum) && length > maximum) {
         err = options.tooLong ||
           this.tooLong ||
-          "is too long (maximum is %{count} characters)";
+          v._("is too long (maximum is %{count} characters)");
         errors.push(v.format(err, {count: maximum}));
       }
 
@@ -853,7 +858,7 @@
             options.notValid ||
             this.notValid ||
             this.message ||
-            "must be a valid number";
+            .v_("must be a valid number");
         }
       }
 
@@ -868,7 +873,7 @@
           options.notValid ||
           this.notValid ||
           this.message ||
-          "is not a number";
+          v._("is not a number");
       }
 
       // Same logic as above, sort of. Don't bother with comparisons if this
@@ -878,7 +883,7 @@
           options.notInteger ||
           this.notInteger ||
           this.message ||
-          "must be an integer";
+          v._("must be an integer");
       }
 
       for (name in checks) {
@@ -891,7 +896,7 @@
           var msg = options[key] ||
             this[key] ||
             this.message ||
-            "must be %{type} %{count}";
+            v._("must be %{type} %{count}");
 
           errors.push(v.format(msg, {
             count: count,
@@ -904,13 +909,13 @@
         errors.push(options.notOdd ||
             this.notOdd ||
             this.message ||
-            "must be odd");
+            v._("must be odd"));
       }
       if (options.even && value % 2 !== 0) {
         errors.push(options.notEven ||
             this.notEven ||
             this.message ||
-            "must be even");
+            v._("must be even"));
       }
 
       if (errors.length) {
@@ -919,7 +924,7 @@
     },
     datetime: v.extend(function(value, options) {
       if (!v.isFunction(this.parse) || !v.isFunction(this.format)) {
-        throw new Error("Both the parse and format functions needs to be set to use the datetime/date validator");
+        throw new Error(v._("Both the parse and format functions needs to be set to use the datetime/date validator"));
       }
 
       // Empty values are fine
@@ -942,7 +947,7 @@
         err = options.notValid ||
           options.message ||
           this.notValid ||
-          "must be a valid date";
+          v._("must be a valid date");
         return v.format(err, {value: arguments[0]});
       }
 
@@ -950,7 +955,7 @@
         err = options.tooEarly ||
           options.message ||
           this.tooEarly ||
-          "must be no earlier than %{date}";
+          v._("must be no earlier than %{date}");
         err = v.format(err, {
           value: this.format(value, options),
           date: this.format(earliest, options)
@@ -962,7 +967,7 @@
         err = options.tooLate ||
           options.message ||
           this.tooLate ||
-          "must be no later than %{date}";
+          v._("must be no later than %{date}");
         err = v.format(err, {
           date: this.format(latest, options),
           value: this.format(value, options)
@@ -988,7 +993,7 @@
 
       options = v.extend({}, this.options, options);
 
-      var message = options.message || this.message || "is invalid"
+      var message = options.message || this.message || v._("is invalid")
         , pattern = options.pattern
         , match;
 
@@ -1022,7 +1027,7 @@
       }
       var message = options.message ||
         this.message ||
-        "^%{value} is not included in the list";
+        v._("^%{value} is not included in the list");
       return v.format(message, {value: value});
     },
     exclusion: function(value, options) {
@@ -1037,7 +1042,7 @@
       if (!v.contains(options.within, value)) {
         return;
       }
-      var message = options.message || this.message || "^%{value} is restricted";
+      var message = options.message || this.message || v._("^%{value} is restricted");
       if (v.isString(options.within[value])) {
         value = options.within[value];
       }
@@ -1045,7 +1050,7 @@
     },
     email: v.extend(function(value, options) {
       options = v.extend({}, this.options, options);
-      var message = options.message || this.message || "is not a valid email";
+      var message = options.message || this.message || v._("is not a valid email");
       // Empty values are fine
       if (!v.isDefined(value)) {
         return;
@@ -1070,10 +1075,10 @@
       options = v.extend({}, this.options, options);
       var message = options.message ||
         this.message ||
-        "is not equal to %{attribute}";
+        v._("is not equal to %{attribute}");
 
       if (v.isEmpty(options.attribute) || !v.isString(options.attribute)) {
-        throw new Error("The attribute must be a non empty string");
+        throw new Error(v._("The attribute must be a non empty string"));
       }
 
       var otherValue = v.getDeepObjectValue(attributes, options.attribute)
@@ -1097,7 +1102,7 @@
 
       options = v.extend({}, this.options, options);
 
-      var message = options.message || this.message || "is not a valid url"
+      var message = options.message || this.message || v._("is not a valid url")
         , schemes = options.schemes || this.schemes || ['http', 'https']
         , allowLocal = options.allowLocal || this.allowLocal || false
         , allowDataUrl = options.allowDataUrl || this.allowDataUrl || false;
@@ -1175,7 +1180,7 @@
 
       var type = options.type;
       if (!v.isDefined(type)) {
-        throw new Error("No type was specified");
+        throw new Error(v._("No type was specified"));
       }
 
       var check;
@@ -1186,7 +1191,7 @@
       }
 
       if (!v.isFunction(check)) {
-        throw new Error("validate.validators.type.types." + type + " must be a function.");
+        throw new Error(v._("validate.validators.type.types.") + type + v._(" must be a function."));
       }
 
       if (!check(value, options, attribute, attributes, globalOptions)) {
@@ -1194,7 +1199,7 @@
           this.messages[type] ||
           this.message ||
           options.message ||
-          (v.isFunction(type) ? "must be of the correct type" : "must be of type %{type}");
+          (v.isFunction(type) ? v._("must be of the correct type") : v._("must be of type %{type}"));
 
         if (v.isFunction(message)) {
           message = message(value, originalOptions, attribute, attributes, globalOptions);
